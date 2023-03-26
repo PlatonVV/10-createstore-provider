@@ -2,13 +2,13 @@ import React, {ChangeEvent} from 'react';
 import {FilterValuesType, TodolistType} from './App';
 import {AddItemForm} from './AddItemForm';
 import {EditableSpan} from './EditableSpan';
-import IconButton from "@mui/material/IconButton/IconButton";
-import {Delete} from "@mui/icons-material";
-import {Button, Checkbox} from "@mui/material";
+import IconButton from '@mui/material/IconButton/IconButton';
+import {Delete} from '@mui/icons-material';
+import {Button, Checkbox} from '@mui/material';
 import {useDispatch, useSelector} from 'react-redux';
 import {AppRootStateType} from './state/store';
-import {addTaskAC, removeTaskAC} from './state/tasks-reducer';
-import {changeTodolistTitleAC, removeTodolistAC} from './state/todolists-reducer';
+import {addTaskAC, changeTaskStatusAC, changeTaskTitleAC, removeTaskAC} from './state/tasks-reducer';
+import {changeTodolistFilterAC, changeTodolistTitleAC, removeTodolistAC} from './state/todolists-reducer';
 
 
 export type TaskType = {
@@ -26,7 +26,7 @@ type PropsType = {
 
 export function TodolistWithRedux(props: PropsType) {
 
-    const tasks = useSelector<AppRootStateType,Array<TaskType> >(state => state.tasks[props.id])
+    let tasks = useSelector<AppRootStateType, Array<TaskType>>(state => state.tasks[props.id])
     const dispatch = useDispatch()
 
     const addTask = (title: string) => {
@@ -40,14 +40,24 @@ export function TodolistWithRedux(props: PropsType) {
         dispatch(changeTodolistTitleAC(props.id, title))
     }
 
-    const onAllClickHandler = () => props.changeFilter("all", props.id);
-    const onActiveClickHandler = () => props.changeFilter("active", props.id);
-    const onCompletedClickHandler = () => props.changeFilter("completed", props.id);
+    const onAllClickHandler = () => dispatch(changeTodolistFilterAC(props.id, 'all'))
+    const onActiveClickHandler = () => dispatch(changeTodolistFilterAC(props.id, 'active'))
+    const onCompletedClickHandler = () => dispatch(changeTodolistFilterAC(props.id, 'completed'))
 
+    if (props.filter === 'active') {
+        tasks = tasks.filter(
+            (t) => !t.isDone,
+        );
+    }
+    if (props.filter === 'completed') {
+        tasks = tasks.filter(
+            (t) => t.isDone,
+        );
+    }
     return <div>
-        <h3> <EditableSpan value={props.title} onChange={changeTodolistTitle} />
+        <h3><EditableSpan value={props.title} onChange={changeTodolistTitle}/>
             <IconButton onClick={removeTodolist}>
-                <Delete />
+                <Delete/>
             </IconButton>
         </h3>
         <AddItemForm addItem={addTask}/>
@@ -57,23 +67,23 @@ export function TodolistWithRedux(props: PropsType) {
                     const onClickHandler = () => dispatch(removeTaskAC(t.id, props.id))
                     const onChangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
                         let newIsDoneValue = e.currentTarget.checked;
-                        props.changeTaskStatus(t.id, newIsDoneValue, props.id);
+                        dispatch(changeTaskStatusAC(t.id, newIsDoneValue, props.id))
                     }
                     const onTitleChangeHandler = (newValue: string) => {
-                        props.changeTaskTitle(t.id, newValue, props.id);
+                        dispatch(changeTaskTitleAC(t.id, newValue, props.id))
                     }
 
 
-                    return <div key={t.id} className={t.isDone ? "is-done" : ""}>
+                    return <div key={t.id} className={t.isDone ? 'is-done' : ''}>
                         <Checkbox
                             checked={t.isDone}
                             color="primary"
                             onChange={onChangeHandler}
                         />
 
-                        <EditableSpan value={t.title} onChange={onTitleChangeHandler} />
+                        <EditableSpan value={t.title} onChange={onTitleChangeHandler}/>
                         <IconButton onClick={onClickHandler}>
-                            <Delete />
+                            <Delete/>
                         </IconButton>
                     </div>
                 })
